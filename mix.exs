@@ -15,7 +15,8 @@ defmodule LibWechat.MixProject do
       deps: deps(),
       source_url: @repo_url,
       name: @name,
-      package: package()
+      package: package(),
+      description: @description
     ]
   end
 
