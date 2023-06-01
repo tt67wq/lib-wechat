@@ -81,8 +81,10 @@ defmodule LibWechat do
   获取access_token
   https://developers.weixin.qq.com/doc/offiaccount/Basic_Information/Get_access_token.html
 
-  iex> LibWechat.get_access_token(wechat)
-  {:ok, %{"access_token"=>"xxx"}}
+
+  ## Examples
+
+      {:ok, %{"access_token"=>"xxx"}} = LibWechat.get_access_token(wechat)
   """
   @spec get_access_token(t()) :: ok_t(json_t()) | err_t(Jason.DecodeError.t())
   def get_access_token(wechat) do
@@ -119,18 +121,15 @@ defmodule LibWechat do
 
   ## Examples
 
-  iex> LibWechat.get_unlimited_wxacode(wechat, token,
-    %{"scene" => "foo=bar",
-      "page" => "pages/index/index",
-      "width" => 430,
-      "auto_color" => false,
-      "line_color" => %{"r" => 0, "g" => 0, "b" => 0},
-      "is_hyaline" => false
-    }
-  )
-  {:ok, <<255, 216, 255, 224, 0, 16, 74, 70, 73, 70, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 255,
-  219, 0, 67, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-  1, 1, 1, 1, ...>>}
+      {:ok, <<255, 216, ...>>} = LibWechat.get_unlimited_wxacode(wechat, token,
+        %{"scene" => "foo=bar",
+          "page" => "pages/index/index",
+          "width" => 430,
+          "auto_color" => false,
+          "line_color" => %{"r" => 0, "g" => 0, "b" => 0},
+          "is_hyaline" => false
+        }
+      )
   """
   @spec get_unlimited_wxacode(t(), String.t(), json_t()) :: ok_t(binary()) | err_t(any())
   def get_unlimited_wxacode(wechat, token, body) do
@@ -143,20 +142,20 @@ defmodule LibWechat do
   https://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/url-link/urllink.generate.html
 
   ## Examples
-  iex> LibWechat.get_urllink(wechat, token,
-    %{
-      "path" => "pages/index/index",
-      "query" => "foo=bar",
-      "is_expire" => false,
-      "expire_type" => 0,
-      "expire_time" => 0
-    }
-  )
-  {:ok, %{
-    "errcode" => 0,
-    "errmsg" => "ok",
-    "url_link" => "https://wxaurl.cn/bz2LB4RMDVqq"
-  }}
+
+      {:ok, %{
+        "errcode" => 0,
+        "errmsg" => "ok",
+        "url_link" => "https://wxaurl.cn/bz2LB4RMDVqq"
+      }} = LibWechat.get_urllink(wechat, token,
+        %{
+          "path" => "pages/index/index",
+          "query" => "foo=bar",
+          "is_expire" => false,
+          "expire_type" => 0,
+          "expire_time" => 0
+        }
+      )
   """
   @spec get_urllink(t(), String.t(), json_t()) :: ok_t(json_t()) | err_t(Jason.DecodeError.t())
   def get_urllink(wechat, token, body) do
@@ -173,22 +172,22 @@ defmodule LibWechat do
 
   ## Examples
 
-  iex> LibWechat.generate_scheme(wechat, token,
-    %{
-      "jump_wxa" => %{
-        "path" => "pages/index/index",
-        "query" => "foo=bar"
-      },
-      "is_expire" => false,
-      "expire_type" => 0,
-      "expire_time" => 0
-    }
-  )
-  {:ok, %{
-    "errcode" => 0,
-    "errmsg" => "ok",
-    "openlink" => "weixin://dl/business/?t=Akeatr890b"
-  }}
+      {:ok, %{
+        "errcode" => 0,
+        "errmsg" => "ok",
+        "openlink" => "weixin://dl/business/?t=Akeatr890b"
+      }} = LibWechat.generate_scheme(wechat, token,
+        %{
+          "jump_wxa" => %{
+            "path" => "pages/index/index",
+            "query" => "foo=bar"
+          },
+          "is_expire" => false,
+          "expire_type" => 0,
+          "expire_time" => 0
+        }
+      )
+
   """
   @spec generate_scheme(t(), String.t(), json_t()) ::
           ok_t(json_t()) | err_t(Jason.DecodeError.t())
@@ -206,22 +205,26 @@ defmodule LibWechat do
 
   ## Examples
 
-  iex> LibWechat.subscribe_send(wechat, token,
-    %{
-      "touser" => "OPENID",
-      "template_id" => "TEMPLATE_ID",
-      "page" => "index",
-      "miniprogram_state" => "developer",
-      "lang" => "zh_CN",
-      "data" => %{
-        "number01" => %{"value" => "339208499"},
-        "date01" => %{"value" => "2015年01月05日"},
-        "site01" => %{"value" => "TIT创意园"},
-        "site02" => %{"value" => "广州市新港中路397号"}
-      }
-    }
-  )
-  {:ok, %{"errcode" => 0, "errmsg" => "ok", "msgid" => 294402298110051942}}
+      {:ok, %{
+        "errcode" => 0,
+        "errmsg" => "ok",
+        "msgid" => 294402298110051942
+        }} = LibWechat.subscribe_send(wechat, token,
+        %{
+          "touser" => "OPENID",
+          "template_id" => "TEMPLATE_ID",
+          "page" => "index",
+          "miniprogram_state" => "developer",
+          "lang" => "zh_CN",
+          "data" => %{
+            "number01" => %{"value" => "339208499"},
+            "date01" => %{"value" => "2015年01月05日"},
+            "site01" => %{"value" => "TIT创意园"},
+            "site02" => %{"value" => "广州市新港中路397号"}
+          }
+        }
+      )
+
   """
   @spec subscribe_send(t(), String.t(), json_t()) :: ok_t(json_t()) | err_t(Jason.DecodeError.t())
   def subscribe_send(wechat, token, body) do
@@ -238,39 +241,39 @@ defmodule LibWechat do
 
   ## Examples
 
-  iex> LibWechat.uniform_send(wechat, token,
-    %{
-      "touser" => "OPENID",
-      "weapp_template_msg" => %{
-        "template_id" => "TEMPLATE_ID",
-        "page" => "index",
-        "form_id" => "FORMID",
-        "data" => %{
-          "keyword1" => %{"value" => "339208499"},
-          "keyword2" => %{"value" => "2015年01月05日"},
-          "keyword3" => %{"value" => "粤海喜来登酒店"},
-          "keyword4" => %{"value" => "广州市天河区天河路208号"}
-        },
-        "emphasis_keyword" => "keyword1.DATA"
-      },
-      "mp_template_msg" => %{
-        "appid" => "APPID ",
-        "template_id" => "TEMPLATE_ID",
-        "url" => "http://weixin.qq.com/download",
-        "miniprogram" => %{
-          "appid" => "xiaochengxuappid12345",
-          "pagepath" => "index?foo=bar"
-        },
-        "data" => %{
-          "first" => %{"value" => "恭喜你购买成功！", "color" => "#173177"},
-          "keyword1" => %{"value" => "巧克力", "color" => "#173177"},
-          "keyword2" => %{"value" => "39.8元", "color" => "#173177"},
-          "keyword3" => %{"value" => "2014年9月22日", "color" => "#173177"},
-          "remark" => %{"value" => "欢迎再次购买！", "color" => "#173177"}
-        }
-      }
-    })
-  {:ok, %{"errcode" => 0, "errmsg" => "ok"}}
+      {:ok, %{"errcode" => 0, "errmsg" => "ok"}} = LibWechat.uniform_send(wechat, token,
+        %{
+          "touser" => "OPENID",
+          "weapp_template_msg" => %{
+            "template_id" => "TEMPLATE_ID",
+            "page" => "index",
+            "form_id" => "FORMID",
+            "data" => %{
+              "keyword1" => %{"value" => "339208499"},
+              "keyword2" => %{"value" => "2015年01月05日"},
+              "keyword3" => %{"value" => "粤海喜来登酒店"},
+              "keyword4" => %{"value" => "广州市天河区天河路208号"}
+            },
+            "emphasis_keyword" => "keyword1.DATA"
+          },
+          "mp_template_msg" => %{
+            "appid" => "APPID ",
+            "template_id" => "TEMPLATE_ID",
+            "url" => "http://weixin.qq.com/download",
+            "miniprogram" => %{
+              "appid" => "xiaochengxuappid12345",
+              "pagepath" => "index?foo=bar"
+            },
+            "data" => %{
+              "first" => %{"value" => "恭喜你购买成功！", "color" => "#173177"},
+              "keyword1" => %{"value" => "巧克力", "color" => "#173177"},
+              "keyword2" => %{"value" => "39.8元", "color" => "#173177"},
+              "keyword3" => %{"value" => "2014年9月22日", "color" => "#173177"},
+              "remark" => %{"value" => "欢迎再次购买！", "color" => "#173177"}
+            }
+          }
+        })
+
   """
   @spec uniform_send(t(), String.t(), json_t()) :: ok_t(json_t()) | err_t(Jason.DecodeError.t())
   def uniform_send(wechat, token, body) do
@@ -293,22 +296,21 @@ defmodule LibWechat do
 
   ## Examples
 
-  iex> get_phone_number(wechat, token, code)
-  {:ok,
-  %{
-      "errcode":0,
-      "errmsg":"ok",
-      "phone_info": {
-        "phoneNumber":"xxxxxx",
-        "purePhoneNumber": "xxxxxx",
-        "countryCode": 86,
-        "watermark": {
-            "timestamp": 1637744274,
-            "appid": "xxxx"
-        }
-      }
-    }
-  }
+      {:ok,
+        %{
+            "errcode":0,
+            "errmsg":"ok",
+            "phone_info": {
+              "phoneNumber":"xxxxxx",
+              "purePhoneNumber": "xxxxxx",
+              "countryCode": 86,
+              "watermark": {
+                  "timestamp": 1637744274,
+                  "appid": "xxxx"
+              }
+            }
+          }
+        } = get_phone_number(wechat, token, code)
   """
   @spec get_phone_number(t(), String.t(), String.t()) ::
           ok_t(json_t()) | err_t(Jason.DecodeError.t())

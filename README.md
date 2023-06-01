@@ -3,6 +3,8 @@
 
 This SDK provides an Elixir interface to interact with Wechat's APIs.
 
+Head to the [API reference](https://hexdocs.pm/lib_wechat/LibWechat.html) for usage details.
+
 ## Installation
 
 Add the dependency to your `mix.exs` file:
@@ -10,7 +12,7 @@ Add the dependency to your `mix.exs` file:
 ```elixir
 def deps do
   [
-    {:lib_wechat, github: "tt67wq/lib-wechat"}  
+    {:lib_wechat, "~> 0.1.0"}
   ]
 end
 ```
