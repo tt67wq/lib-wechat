@@ -2,21 +2,37 @@ defmodule LibWechat.Client do
   @moduledoc """
   微信请求request behavior
   """
+
   @type t :: struct()
   @type opts :: keyword()
   @type method :: Finch.Request.method()
   @type api :: bitstring()
-  @type body :: %{String.t() => any()}
-  @type params :: %{String.t() => any()}
+  @type body :: %{String.t() => any()} | nil
+  @type params :: %{String.t() => any()} | nil
 
   @callback new(opts()) :: t()
   @callback start_link(client: t()) :: GenServer.on_start()
-  @callback do_request(t(), method(), api(), body(), params(), opts()) ::
+  @callback do_request(
+              client :: t(),
+              method :: method(),
+              api :: api(),
+              body :: body(),
+              params :: params(),
+              opts :: opts()
+            ) ::
               {:ok, iodata()} | {:error, any()}
 
   defp delegate(%module{} = client, func, args),
     do: apply(module, func, [client | args])
 
+  @spec do_request(
+          client :: t(),
+          method :: method(),
+          api :: api(),
+          body :: body(),
+          params :: params(),
+          opts :: opts()
+        ) :: {:ok, iodata()} | {:error, any()}
   def do_request(client, method, api, body, params, opts \\ []) do
     delegate(client, :do_request, [method, api, body, params, opts])
   end
@@ -31,22 +47,39 @@ defmodule LibWechat.Client.Finch do
 
   @behaviour Client
 
+  @client_opts_schema [
+    name: [
+      type: :atom,
+      doc: "name of this process",
+      default: __MODULE__
+    ],
+    addr: [
+      type: :string,
+      doc: "address of the server",
+      default: "https://api.weixin.qq.com"
+    ],
+    json_module: [
+      type: :atom,
+      doc: "module that implements json's encode and decode behavior like Jason",
+      default: Jason
+    ]
+  ]
+
   # types
   @type t :: %__MODULE__{
           name: GenServer.name(),
-          addr: bitstring()
+          addr: bitstring(),
+          json_module: module()
         }
+  @type client_opts_t :: keyword(unquote(NimbleOptions.option_typespec(@client_opts_schema)))
 
-  @enforce_keys ~w(name addr)a
+  @enforce_keys ~w(name addr json_module)a
 
   defstruct @enforce_keys
 
   @impl Client
   def new(opts \\ []) do
-    opts =
-      opts
-      |> Keyword.put_new(:name, __MODULE__)
-      |> Keyword.put_new(:addr, "https://api.weixin.qq.com")
+    opts = opts |> NimbleOptions.validate!(@client_opts_schema)
 
     struct(__MODULE__, opts)
   end
@@ -61,7 +94,7 @@ defmodule LibWechat.Client.Finch do
              method,
              url,
              [{"content-type", "application/json"}],
-             (not is_nil(body) && Jason.encode!(body)) || "",
+             (not is_nil(body) && client.json_module.encode!(body)) || "",
              opts
            ) do
       Finch.request(req, client.name)

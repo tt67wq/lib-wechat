@@ -31,7 +31,7 @@ defmodule LibWechat.MixProject do
   defp deps do
     [
       {:nimble_options, "~> 0.5"},
-      {:jason, "~> 1.4"},
+      {:jason, "~> 1.4", optional: true},
       {:finch, "~> 0.16"},
       {:ex_doc, "~> 0.29", only: :dev, runtime: false}
       # {:dep_from_hexpm, "~> 0.3.0"},

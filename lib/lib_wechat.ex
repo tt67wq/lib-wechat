@@ -32,6 +32,11 @@ defmodule LibWechat do
       type: :string,
       required: true,
       doc: "第三方用户唯一凭证密钥，即appsecret"
+    ],
+    json_module: [
+      type: :atom,
+      doc: "module that implements json's encode and decode behavior like Jason",
+      default: Jason
     ]
   ]
 
@@ -41,14 +46,15 @@ defmodule LibWechat do
           client_module: module(),
           client: Client.t(),
           appid: bitstring(),
-          secret: bitstring()
+          secret: bitstring(),
+          json_module: module()
         }
   @type options_t :: keyword(unquote(NimbleOptions.option_typespec(@options_schema)))
   @type json_t :: %{bitstring() => any()}
   @type ok_t(ret) :: {:ok, ret}
-  @type err_t(err) :: {:error, err}
+  @type err_t :: {:error, any()}
 
-  @enforce_keys ~w(name client_module client appid secret)a
+  @enforce_keys ~w(name client_module client appid secret json_module)a
 
   defstruct @enforce_keys
 
@@ -86,34 +92,34 @@ defmodule LibWechat do
 
       {:ok, %{"access_token"=>"xxx"}} = LibWechat.get_access_token(wechat)
   """
-  @spec get_access_token(t()) :: ok_t(json_t()) | err_t(Jason.DecodeError.t())
+  @spec get_access_token(t()) :: ok_t(json_t()) | err_t()
   def get_access_token(wechat) do
     params = %{
-      appid: wechat.appid,
-      secret: wechat.secret,
-      grant_type: "client_credential"
+      "appid" => wechat.appid,
+      "secret" => wechat.secret,
+      "grant_type" => "client_credential"
     }
 
     {:ok, body} = Client.do_request(wechat.client, :get, "/cgi-bin/token", nil, params)
 
-    Jason.decode(body)
+    wechat.json_module.decode(body)
   end
 
   @doc """
   https://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/login/auth.code2Session.html
   """
-  @spec jscode_to_session(t(), String.t()) :: ok_t(json_t()) | err_t(Jason.DecodeError.t())
+  @spec jscode_to_session(t(), String.t()) :: ok_t(json_t()) | err_t()
   def jscode_to_session(wechat, code) do
     params = %{
-      appid: wechat.appid,
-      secret: wechat.secret,
-      js_code: code,
-      grant_type: "authorization_code"
+      "appid" => wechat.appid,
+      "secret" => wechat.secret,
+      "js_code" => code,
+      "grant_type" => "authorization_code"
     }
 
     {:ok, body} = Client.do_request(wechat.client, :get, "/sns/jscode2session", nil, params)
 
-    Jason.decode(body)
+    wechat.json_module.decode(body)
   end
 
   @doc """
@@ -131,7 +137,7 @@ defmodule LibWechat do
         }
       )
   """
-  @spec get_unlimited_wxacode(t(), String.t(), json_t()) :: ok_t(binary()) | err_t(any())
+  @spec get_unlimited_wxacode(t(), String.t(), json_t()) :: ok_t(binary()) | err_t()
   def get_unlimited_wxacode(wechat, token, body) do
     Client.do_request(wechat.client, :post, "/wxa/getwxacodeunlimit", body, %{
       "access_token" => token
@@ -157,14 +163,14 @@ defmodule LibWechat do
         }
       )
   """
-  @spec get_urllink(t(), String.t(), json_t()) :: ok_t(json_t()) | err_t(Jason.DecodeError.t())
+  @spec get_urllink(t(), String.t(), json_t()) :: ok_t(json_t()) | err_t()
   def get_urllink(wechat, token, body) do
     {:ok, ret} =
       Client.do_request(wechat.client, :post, "/wxa/generate_urllink", body, %{
         "access_token" => token
       })
 
-    Jason.decode(ret)
+    wechat.json_module.decode(ret)
   end
 
   @doc """
@@ -190,14 +196,14 @@ defmodule LibWechat do
 
   """
   @spec generate_scheme(t(), String.t(), json_t()) ::
-          ok_t(json_t()) | err_t(Jason.DecodeError.t())
+          ok_t(json_t()) | err_t()
   def generate_scheme(wechat, token, body) do
     {:ok, ret} =
       Client.do_request(wechat.client, :post, "/wxa/generatescheme", body, %{
         "access_token" => token
       })
 
-    Jason.decode(ret)
+    wechat.json_module.decode(ret)
   end
 
   @doc """
@@ -226,14 +232,14 @@ defmodule LibWechat do
       )
 
   """
-  @spec subscribe_send(t(), String.t(), json_t()) :: ok_t(json_t()) | err_t(Jason.DecodeError.t())
+  @spec subscribe_send(t(), String.t(), json_t()) :: ok_t(json_t()) | err_t()
   def subscribe_send(wechat, token, body) do
     {:ok, ret} =
       Client.do_request(wechat.client, :post, "/cgi-bin/message/subscribe/send", body, %{
         "access_token" => token
       })
 
-    Jason.decode(ret)
+    wechat.json_module.decode(ret)
   end
 
   @doc """
@@ -275,7 +281,7 @@ defmodule LibWechat do
         })
 
   """
-  @spec uniform_send(t(), String.t(), json_t()) :: ok_t(json_t()) | err_t(Jason.DecodeError.t())
+  @spec uniform_send(t(), String.t(), json_t()) :: ok_t(json_t()) | err_t()
   def uniform_send(wechat, token, body) do
     {:ok, ret} =
       Client.do_request(
@@ -288,7 +294,7 @@ defmodule LibWechat do
         }
       )
 
-    Jason.decode(ret)
+    wechat.json_module.decode(ret)
   end
 
   @doc """
@@ -313,7 +319,7 @@ defmodule LibWechat do
         } = get_phone_number(wechat, token, code)
   """
   @spec get_phone_number(t(), String.t(), String.t()) ::
-          ok_t(json_t()) | err_t(Jason.DecodeError.t())
+          ok_t(json_t()) | err_t()
   def get_phone_number(wechat, token, code) do
     {:ok, ret} =
       Client.do_request(
@@ -326,6 +332,6 @@ defmodule LibWechat do
         }
       )
 
-    Jason.decode(ret)
+    wechat.json_module.decode(ret)
   end
 end
