@@ -2,7 +2,7 @@ defmodule LibWechat.Client do
   @moduledoc """
   微信请求request behavior
   """
-
+  alias LibWechat.Client.Error
   @type t :: struct()
   @type opts :: keyword()
   @type method :: Finch.Request.method()
@@ -20,7 +20,7 @@ defmodule LibWechat.Client do
               params :: params(),
               opts :: opts()
             ) ::
-              {:ok, iodata()} | {:error, any()}
+              {:ok, iodata()} | {:error, Error.t()}
 
   defp delegate(%module{} = client, func, args),
     do: apply(module, func, [client | args])
@@ -32,9 +32,21 @@ defmodule LibWechat.Client do
           body :: body(),
           params :: params(),
           opts :: opts()
-        ) :: {:ok, iodata()} | {:error, any()}
+        ) :: {:ok, iodata()} | {:error, Error.t()}
   def do_request(client, method, api, body, params, opts \\ []) do
     delegate(client, :do_request, [method, api, body, params, opts])
+  end
+end
+
+defmodule LibWechat.Client.Error do
+  defexception [:message]
+
+  @type t :: %__MODULE__{
+          message: String.t()
+        }
+
+  def new(message) do
+    %__MODULE__{message: message}
   end
 end
 
@@ -102,11 +114,11 @@ defmodule LibWechat.Client.Finch do
         {:ok, %Finch.Response{status: 200, body: body}} ->
           {:ok, body}
 
-        {:ok, %Finch.Response{status: status}} ->
-          {:error, {:http_error, status}}
+        {:ok, %Finch.Response{status: status, body: body}} ->
+          {:error, %Client.Error{message: "status: #{status}, body: #{body}"}}
 
-        {:error, _} = error ->
-          error
+        {:error, exception} ->
+          raise Client.Error.new(inspect(exception))
       end
     end
   end

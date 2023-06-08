@@ -52,7 +52,7 @@ defmodule LibWechat do
   @type options_t :: keyword(unquote(NimbleOptions.option_typespec(@options_schema)))
   @type json_t :: %{bitstring() => any()}
   @type ok_t(ret) :: {:ok, ret}
-  @type err_t :: {:error, any()}
+  @type err_t :: {:error, LibWechat.Client.Error.t()}
 
   @enforce_keys ~w(name client_module client appid secret json_module)a
 
@@ -100,9 +100,9 @@ defmodule LibWechat do
       "grant_type" => "client_credential"
     }
 
-    {:ok, body} = Client.do_request(wechat.client, :get, "/cgi-bin/token", nil, params)
-
-    wechat.json_module.decode(body)
+    with {:ok, body} <- Client.do_request(wechat.client, :get, "/cgi-bin/token", nil, params) do
+      {:ok, wechat.json_module.decode!(body)}
+    end
   end
 
   @doc """
@@ -117,9 +117,9 @@ defmodule LibWechat do
       "grant_type" => "authorization_code"
     }
 
-    {:ok, body} = Client.do_request(wechat.client, :get, "/sns/jscode2session", nil, params)
-
-    wechat.json_module.decode(body)
+    with {:ok, body} <- Client.do_request(wechat.client, :get, "/sns/jscode2session", nil, params) do
+      {:ok, wechat.json_module.decode!(body)}
+    end
   end
 
   @doc """
@@ -165,12 +165,12 @@ defmodule LibWechat do
   """
   @spec get_urllink(t(), String.t(), json_t()) :: ok_t(json_t()) | err_t()
   def get_urllink(wechat, token, body) do
-    {:ok, ret} =
-      Client.do_request(wechat.client, :post, "/wxa/generate_urllink", body, %{
-        "access_token" => token
-      })
-
-    wechat.json_module.decode(ret)
+    with {:ok, ret} <-
+           Client.do_request(wechat.client, :post, "/wxa/generate_urllink", body, %{
+             "access_token" => token
+           }) do
+      {:ok, wechat.json_module.decode!(ret)}
+    end
   end
 
   @doc """
@@ -198,12 +198,12 @@ defmodule LibWechat do
   @spec generate_scheme(t(), String.t(), json_t()) ::
           ok_t(json_t()) | err_t()
   def generate_scheme(wechat, token, body) do
-    {:ok, ret} =
-      Client.do_request(wechat.client, :post, "/wxa/generatescheme", body, %{
-        "access_token" => token
-      })
-
-    wechat.json_module.decode(ret)
+    with {:ok, ret} <-
+           Client.do_request(wechat.client, :post, "/wxa/generatescheme", body, %{
+             "access_token" => token
+           }) do
+      {:ok, wechat.json_module.decode!(ret)}
+    end
   end
 
   @doc """
@@ -234,12 +234,12 @@ defmodule LibWechat do
   """
   @spec subscribe_send(t(), String.t(), json_t()) :: ok_t(json_t()) | err_t()
   def subscribe_send(wechat, token, body) do
-    {:ok, ret} =
-      Client.do_request(wechat.client, :post, "/cgi-bin/message/subscribe/send", body, %{
-        "access_token" => token
-      })
-
-    wechat.json_module.decode(ret)
+    with {:ok, ret} <-
+           Client.do_request(wechat.client, :post, "/cgi-bin/message/subscribe/send", body, %{
+             "access_token" => token
+           }) do
+      {:ok, wechat.json_module.decode!(ret)}
+    end
   end
 
   @doc """
@@ -283,18 +283,18 @@ defmodule LibWechat do
   """
   @spec uniform_send(t(), String.t(), json_t()) :: ok_t(json_t()) | err_t()
   def uniform_send(wechat, token, body) do
-    {:ok, ret} =
-      Client.do_request(
-        wechat.client,
-        :post,
-        "/cgi-bin/message/wxopen/template/uniform_send",
-        body,
-        %{
-          "access_token" => token
-        }
-      )
-
-    wechat.json_module.decode(ret)
+    with {:ok, ret} <-
+           Client.do_request(
+             wechat.client,
+             :post,
+             "/cgi-bin/message/wxopen/template/uniform_send",
+             body,
+             %{
+               "access_token" => token
+             }
+           ) do
+      {:ok, wechat.json_module.decode!(ret)}
+    end
   end
 
   @doc """
@@ -321,17 +321,17 @@ defmodule LibWechat do
   @spec get_phone_number(t(), String.t(), String.t()) ::
           ok_t(json_t()) | err_t()
   def get_phone_number(wechat, token, code) do
-    {:ok, ret} =
-      Client.do_request(
-        wechat.client,
-        :post,
-        "/wxa/business/getuserphonenumber",
-        %{"code" => code},
-        %{
-          "access_token" => token
-        }
-      )
-
-    wechat.json_module.decode(ret)
+    with {:ok, ret} <-
+           Client.do_request(
+             wechat.client,
+             :post,
+             "/wxa/business/getuserphonenumber",
+             %{"code" => code},
+             %{
+               "access_token" => token
+             }
+           ) do
+      {:ok, wechat.json_module.decode!(ret)}
+    end
   end
 end
