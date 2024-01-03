@@ -1,5 +1,4 @@
 defmodule LibWechat do
-  @external_resource "README.md"
   @moduledoc "README.md"
              |> File.read!()
              |> String.split("<!-- MDOC !-->")
@@ -7,6 +6,7 @@ defmodule LibWechat do
 
   alias LibWechat.Client
 
+  @external_resource "README.md"
   @options_schema [
     name: [
       type: :atom,
@@ -66,8 +66,7 @@ defmodule LibWechat do
   @spec new(options_t()) :: t()
   def new(opts \\ []) do
     opts =
-      opts
-      |> NimbleOptions.validate!(@options_schema)
+      NimbleOptions.validate!(opts, @options_schema)
 
     struct(__MODULE__, opts)
   end
