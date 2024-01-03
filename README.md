@@ -12,7 +12,7 @@ Add the dependency to your `mix.exs` file:
 ```elixir
 def deps do
   [
-    {:lib_wechat, "~> 0.1.1"}
+    {:lib_wechat, "~> 0.1"}
   ]
 end
 ```

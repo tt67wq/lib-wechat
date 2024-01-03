@@ -3,7 +3,7 @@ defmodule LibWechat.MixProject do
   use Mix.Project
 
   @name "lib_wechat"
-  @version "0.1.1"
+  @version "0.1.2"
   @repo_url "https://github.com/tt67wq/lib-wechat"
   @description "A library for WeChat API"
 
