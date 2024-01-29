@@ -4,7 +4,8 @@ defmodule LibWechat do
              |> String.split("<!-- MDOC !-->")
              |> Enum.fetch!(1)
 
-  alias LibWechat.Client
+  alias LibWechat.Http
+  alias LibWechat.Typespecs
 
   @external_resource "README.md"
   @options_schema [
@@ -13,15 +14,10 @@ defmodule LibWechat do
       doc: "name of this process",
       default: :wechat
     ],
-    client_module: [
-      type: :atom,
-      doc: "module that implements `LibWechat.Client` behavior",
-      default: LibWechat.Client.Finch
-    ],
     client: [
       type: :any,
-      doc: "client instance",
-      default: LibWechat.Client.Finch.new()
+      doc: "http client instance which implements LibWechat.Http behavior",
+      default: Http.Default.new()
     ],
     appid: [
       type: :string,
@@ -32,32 +28,25 @@ defmodule LibWechat do
       type: :string,
       required: true,
       doc: "第三方用户唯一凭证密钥，即appsecret"
-    ],
-    json_module: [
-      type: :atom,
-      doc: "module that implements json's encode and decode behavior like Jason",
-      default: Jason
     ]
   ]
 
   # types
   @type t :: %__MODULE__{
           name: GenServer.name(),
-          client_module: module(),
           client: Client.t(),
           appid: binary(),
-          secret: binary(),
-          json_module: module()
+          secret: binary()
         }
   @type options_t :: keyword(unquote(NimbleOptions.option_typespec(@options_schema)))
-  @type json_t :: %{binary() => any()}
-  @type ok_t(ret) :: {:ok, ret}
-  @type err_t :: {:error, LibWechat.Client.Error.t()}
+  @type ok_t(m) :: {:ok, m}
+  @type err_t :: {:error, LibWechat.Error.t()}
   @type token_t :: String.t()
 
-  @enforce_keys ~w(name client_module client appid secret json_module)a
-
-  defstruct @enforce_keys
+  defstruct name: :wechat,
+            client: nil,
+            appid: "",
+            secret: ""
 
   @doc """
   create an instance of LibWechat
@@ -80,7 +69,7 @@ defmodule LibWechat do
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
     {wechat, _opts} = Keyword.pop!(opts, :wechat)
-    wechat.client_module.start_link(client: wechat.client)
+    Http.start_link(wechat.client)
   end
 
   @doc """
@@ -92,23 +81,31 @@ defmodule LibWechat do
 
       {:ok, %{"access_token"=>"xxx"}} = LibWechat.get_access_token(wechat)
   """
-  @spec get_access_token(t()) :: ok_t(json_t()) | err_t()
-  def get_access_token(wechat) do
+  @spec get_access_token(t()) :: ok_t(Typespecs.string_dict()) | err_t()
+  def get_access_token(%__MODULE__{client: client, appid: appid, secret: secret}) do
     params = %{
-      "appid" => wechat.appid,
-      "secret" => wechat.secret,
+      "appid" => appid,
+      "secret" => secret,
       "grant_type" => "client_credential"
     }
 
-    with {:ok, body} <- Client.do_request(wechat.client, :get, "/cgi-bin/token", nil, params) do
-      {:ok, wechat.json_module.decode!(body)}
+    with {:ok, resp} <-
+           Http.do_request(
+             client,
+             Http.Request.new(
+               method: :get,
+               path: "/cgi-bin/token",
+               params: params
+             )
+           ) do
+      Http.Response.json(resp)
     end
   end
 
   @doc """
   https://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/login/auth.code2Session.html
   """
-  @spec jscode_to_session(t(), String.t()) :: ok_t(json_t()) | err_t()
+  @spec jscode_to_session(t(), String.t()) :: ok_t(Typespecs.string_dict()) | err_t()
   def jscode_to_session(wechat, code) do
     params = %{
       "appid" => wechat.appid,
@@ -117,8 +114,16 @@ defmodule LibWechat do
       "grant_type" => "authorization_code"
     }
 
-    with {:ok, body} <- Client.do_request(wechat.client, :get, "/sns/jscode2session", nil, params) do
-      {:ok, wechat.json_module.decode!(body)}
+    with {:ok, resp} <-
+           Http.do_request(
+             wechat.client,
+             Http.Request.new(
+               method: :get,
+               path: "/sns/jscode2session",
+               params: params
+             )
+           ) do
+      Http.Response.json(resp)
     end
   end
 
@@ -137,11 +142,25 @@ defmodule LibWechat do
         }
       )
   """
-  @spec get_unlimited_wxacode(t(), String.t(), json_t()) :: ok_t(binary()) | err_t()
-  def get_unlimited_wxacode(wechat, token, body) do
-    Client.do_request(wechat.client, :post, "/wxa/getwxacodeunlimit", body, %{
-      "access_token" => token
-    })
+  @spec get_unlimited_wxacode(t(), token_t(), Typespecs.string_dict()) :: ok_t(binary()) | err_t()
+  def get_unlimited_wxacode(%__MODULE__{client: client}, token, payload) do
+    # Client.do_request(wechat.client, :post, "/wxa/getwxacodeunlimit", body, %{
+    #   "access_token" => token
+    # })
+    with {:ok, body} <- Jason.encode(payload),
+         {:ok, resp} <-
+           Http.do_request(
+             client,
+             Http.Request.new(
+               method: :post,
+               path: "/wxa/getwxacodeunlimit",
+               body: body,
+               headers: [{"Content-Type", "application/json"}],
+               params: %{"access_token" => token}
+             )
+           ) do
+      {:ok, Http.Response.body(resp)}
+    end
   end
 
   @doc """
@@ -163,13 +182,27 @@ defmodule LibWechat do
         }
       )
   """
-  @spec get_urllink(t(), String.t(), json_t()) :: ok_t(json_t()) | err_t()
-  def get_urllink(wechat, token, body) do
-    with {:ok, ret} <-
-           Client.do_request(wechat.client, :post, "/wxa/generate_urllink", body, %{
-             "access_token" => token
-           }) do
-      {:ok, wechat.json_module.decode!(ret)}
+  @spec get_urllink(t(), token_t(), Typespecs.string_dict()) :: ok_t(Typespecs.string_dict()) | err_t()
+  def get_urllink(%__MODULE__{client: client}, token, payload) do
+    # with {:ok, ret} <-
+    #        Client.do_request(wechat.client, :post, "/wxa/generate_urllink", body, %{
+    #          "access_token" => token
+    #        }) do
+    #   {:ok, wechat.json_module.decode!(ret)}
+    # end
+    with {:ok, body} <- Jason.encode(payload),
+         {:ok, resp} <-
+           Http.do_request(
+             client,
+             Http.Request.new(
+               method: :post,
+               path: "/wxa/generate_urllink",
+               body: body,
+               headers: [{"Content-Type", "application/json"}],
+               params: %{"access_token" => token}
+             )
+           ) do
+      Http.Response.json(resp)
     end
   end
 
@@ -195,14 +228,28 @@ defmodule LibWechat do
       )
 
   """
-  @spec generate_scheme(t(), String.t(), json_t()) ::
-          ok_t(json_t()) | err_t()
-  def generate_scheme(wechat, token, body) do
-    with {:ok, ret} <-
-           Client.do_request(wechat.client, :post, "/wxa/generatescheme", body, %{
-             "access_token" => token
-           }) do
-      {:ok, wechat.json_module.decode!(ret)}
+  @spec generate_scheme(t(), token_t(), Typespecs.string_dict()) ::
+          ok_t(Typespecs.string_dict()) | err_t()
+  def generate_scheme(%__MODULE__{client: client}, token, payload) do
+    # with {:ok, ret} <-
+    #        Client.do_request(wechat.client, :post, "/wxa/generatescheme", body, %{
+    #          "access_token" => token
+    #        }) do
+    #   {:ok, wechat.json_module.decode!(ret)}
+    # end
+    with {:ok, body} <- Jason.encode(payload),
+         {:ok, resp} <-
+           Http.do_request(
+             client,
+             Http.Request.new(
+               method: :post,
+               path: "/wxa/generatescheme",
+               body: body,
+               headers: [{"Content-Type", "application/json"}],
+               params: %{"access_token" => token}
+             )
+           ) do
+      Http.Response.json(resp)
     end
   end
 
@@ -232,13 +279,27 @@ defmodule LibWechat do
       )
 
   """
-  @spec subscribe_send(t(), String.t(), json_t()) :: ok_t(json_t()) | err_t()
-  def subscribe_send(wechat, token, body) do
-    with {:ok, ret} <-
-           Client.do_request(wechat.client, :post, "/cgi-bin/message/subscribe/send", body, %{
-             "access_token" => token
-           }) do
-      {:ok, wechat.json_module.decode!(ret)}
+  @spec subscribe_send(t(), token_t(), Typespecs.string_dict()) :: ok_t(Typespecs.string_dict()) | err_t()
+  def subscribe_send(%__MODULE__{client: client}, token, payload) do
+    # with {:ok, ret} <-
+    #        Client.do_request(wechat.client, :post, "/cgi-bin/message/subscribe/send", body, %{
+    #          "access_token" => token
+    #        }) do
+    #   {:ok, wechat.json_module.decode!(ret)}
+    # end
+    with {:ok, body} <- Jason.encode(payload),
+         {:ok, resp} <-
+           Http.do_request(
+             client,
+             Http.Request.new(
+               method: :post,
+               path: "/cgi-bin/message/subscribe/send",
+               body: body,
+               headers: [{"Content-Type", "application/json"}],
+               params: %{"access_token" => token}
+             )
+           ) do
+      Http.Response.json(resp)
     end
   end
 
@@ -281,19 +342,33 @@ defmodule LibWechat do
         })
 
   """
-  @spec uniform_send(t(), String.t(), json_t()) :: ok_t(json_t()) | err_t()
+  @spec uniform_send(t(), token_t(), Typespecs.string_dict()) :: ok_t(Typespecs.string_dict()) | err_t()
   def uniform_send(wechat, token, body) do
-    with {:ok, ret} <-
-           Client.do_request(
+    # with {:ok, ret} <-
+    #        Client.do_request(
+    #          wechat.client,
+    #          :post,
+    #          "/cgi-bin/message/wxopen/template/uniform_send",
+    #          body,
+    #          %{
+    #            "access_token" => token
+    #          }
+    #        ) do
+    #   {:ok, wechat.json_module.decode!(ret)}
+    # end
+    with {:ok, body} <- Jason.encode(body),
+         {:ok, resp} <-
+           Http.do_request(
              wechat.client,
-             :post,
-             "/cgi-bin/message/wxopen/template/uniform_send",
-             body,
-             %{
-               "access_token" => token
-             }
+             Http.Request.new(
+               method: :post,
+               path: "/cgi-bin/message/wxopen/template/uniform_send",
+               body: body,
+               headers: [{"Content-Type", "application/json"}],
+               params: %{"access_token" => token}
+             )
            ) do
-      {:ok, wechat.json_module.decode!(ret)}
+      Http.Response.json(resp)
     end
   end
 
@@ -318,20 +393,33 @@ defmodule LibWechat do
           }
         } = get_phone_number(wechat, token, code)
   """
-  @spec get_phone_number(t(), String.t(), String.t()) ::
-          ok_t(json_t()) | err_t()
+  @spec get_phone_number(t(), token_t(), String.t()) ::
+          ok_t(Typespecs.string_dict()) | err_t()
   def get_phone_number(wechat, token, code) do
-    with {:ok, ret} <-
-           Client.do_request(
+    # with {:ok, ret} <-
+    #        Client.do_request(
+    #          wechat.client,
+    #          :post,
+    #          "/wxa/business/getuserphonenumber",
+    #          %{"code" => code},
+    #          %{
+    #            "access_token" => token
+    #          }
+    #        ) do
+    #   {:ok, wechat.json_module.decode!(ret)}
+    # end
+    with {:ok, resp} <-
+           Http.do_request(
              wechat.client,
-             :post,
-             "/wxa/business/getuserphonenumber",
-             %{"code" => code},
-             %{
-               "access_token" => token
-             }
+             Http.Request.new(
+               method: :post,
+               path: "/wxa/business/getuserphonenumber",
+               body: Jason.encode!(%{"code" => code}),
+               headers: [{"Content-Type", "application/json"}],
+               params: %{"access_token" => token}
+             )
            ) do
-      {:ok, wechat.json_module.decode!(ret)}
+      Http.Response.json(resp)
     end
   end
 
@@ -382,19 +470,21 @@ defmodule LibWechat do
          "trace_id": "60ae120f-371d5872-7941a05b"
       }
   """
-  @spec msg_sec_check(t(), String.t(), json_t()) :: ok_t(json_t()) | err_t()
-  def msg_sec_check(%__MODULE__{client: client, json_module: json}, token, body) do
-    with {:ok, ret} <-
-           Client.do_request(
+  @spec msg_sec_check(t(), token_t(), Typespecs.string_dict()) :: ok_t(Typespecs.string_dict()) | err_t()
+  def msg_sec_check(%__MODULE__{client: client}, token, payload) do
+    with {:ok, body} <- Jason.encode(payload),
+         {:ok, resp} <-
+           Http.do_request(
              client,
-             :post,
-             "/wxa/msg_sec_check",
-             body,
-             %{
-               "access_token" => token
-             }
+             Http.Request.new(
+               method: :post,
+               path: "/wxa/msg_sec_check",
+               body: body,
+               headers: [{"Content-Type", "application/json"}],
+               params: %{"access_token" => token}
+             )
            ) do
-      {:ok, json.decode!(ret)}
+      Http.Response.json(resp)
     end
   end
 end
