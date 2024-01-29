@@ -1,8 +1,9 @@
 defmodule LibWechatTest do
+  @moduledoc false
   use ExUnit.Case
 
   setup do
-    test_data = File.read!("tmp/test.json") |> Jason.decode!()
+    test_data = "tmp/test.json" |> File.read!() |> Jason.decode!()
 
     wechat =
       LibWechat.new(
@@ -98,5 +99,15 @@ defmodule LibWechatTest do
     }
 
     assert {:ok, _} = LibWechat.uniform_send(wechat, token, payload)
+  end
+
+  test "msg_sec_check", %{wechat: wechat, token: token} do
+    assert {:ok, _} =
+             LibWechat.msg_sec_check(wechat, token, %{
+               "content" => "hello",
+               "openid" => "ohNY75Jw8MlsKuu4cFBbjmK4ZP_w",
+               "version" => 2,
+               "scene" => 1
+             })
   end
 end

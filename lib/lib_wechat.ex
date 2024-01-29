@@ -45,14 +45,15 @@ defmodule LibWechat do
           name: GenServer.name(),
           client_module: module(),
           client: Client.t(),
-          appid: bitstring(),
-          secret: bitstring(),
+          appid: binary(),
+          secret: binary(),
           json_module: module()
         }
   @type options_t :: keyword(unquote(NimbleOptions.option_typespec(@options_schema)))
-  @type json_t :: %{bitstring() => any()}
+  @type json_t :: %{binary() => any()}
   @type ok_t(ret) :: {:ok, ret}
   @type err_t :: {:error, LibWechat.Client.Error.t()}
+  @type token_t :: String.t()
 
   @enforce_keys ~w(name client_module client appid secret json_module)a
 
@@ -331,6 +332,69 @@ defmodule LibWechat do
              }
            ) do
       {:ok, wechat.json_module.decode!(ret)}
+    end
+  end
+
+  @doc """
+  https://developers.weixin.qq.com/miniprogram/dev/OpenApiDoc/sec-center/sec-check/msgSecCheck.html
+
+  ## Examples
+
+      iex> payload = %{
+        "openid"=> "OPENID",
+        "scene"=> 1,
+        "version"=> 2,
+        "content"=> "hello world!"
+      }
+      iex> LibWechat.msg_sec_check(wechat, token, payload)
+      {
+         "errcode"=> 0,
+         "errmsg"=> "ok",
+         "result"=> %{
+             "suggest"=> "risky",
+             "label"=> 20001
+         },
+         "detail"=> [
+             %{
+                 "strategy"=> "content_model",
+                 "errcode"=> 0,
+                 "suggest"=> "risky",
+                 "label"=> 20006,
+                 "prob"=> 90
+             },
+             %{
+                 "strategy": "keyword",
+                 "errcode": 0,
+                 "suggest": "pass",
+                 "label": 20006,
+                 "level": 20,
+                 "keyword": "命中的关键词1"
+             },
+             {
+                 "strategy": "keyword",
+                 "errcode": 0,
+                 "suggest": "risky",
+                 "label": 20006,
+                 "level": 90,
+                 "keyword": "命中的关键词2"
+             }
+         ],
+         "trace_id": "60ae120f-371d5872-7941a05b"
+      }
+  """
+  @spec msg_sec_check(t(), String.t(), json_t()) :: ok_t(json_t()) | err_t()
+  def msg_sec_check(%__MODULE__{client: client, json_module: json}, token, body) do
+    with {:ok, ret} <-
+           Client.do_request(
+             client,
+             :post,
+             "/wxa/msg_sec_check",
+             body,
+             %{
+               "access_token" => token
+             }
+           ) do
+      {:ok, json.decode!(ret)}
     end
   end
 end
