@@ -144,9 +144,6 @@ defmodule LibWechat do
   """
   @spec get_unlimited_wxacode(t(), token_t(), Typespecs.string_dict()) :: ok_t(binary()) | err_t()
   def get_unlimited_wxacode(%__MODULE__{client: client}, token, payload) do
-    # Client.do_request(wechat.client, :post, "/wxa/getwxacodeunlimit", body, %{
-    #   "access_token" => token
-    # })
     with {:ok, body} <- Jason.encode(payload),
          {:ok, resp} <-
            Http.do_request(
@@ -184,12 +181,6 @@ defmodule LibWechat do
   """
   @spec get_urllink(t(), token_t(), Typespecs.string_dict()) :: ok_t(Typespecs.string_dict()) | err_t()
   def get_urllink(%__MODULE__{client: client}, token, payload) do
-    # with {:ok, ret} <-
-    #        Client.do_request(wechat.client, :post, "/wxa/generate_urllink", body, %{
-    #          "access_token" => token
-    #        }) do
-    #   {:ok, wechat.json_module.decode!(ret)}
-    # end
     with {:ok, body} <- Jason.encode(payload),
          {:ok, resp} <-
            Http.do_request(
@@ -231,12 +222,6 @@ defmodule LibWechat do
   @spec generate_scheme(t(), token_t(), Typespecs.string_dict()) ::
           ok_t(Typespecs.string_dict()) | err_t()
   def generate_scheme(%__MODULE__{client: client}, token, payload) do
-    # with {:ok, ret} <-
-    #        Client.do_request(wechat.client, :post, "/wxa/generatescheme", body, %{
-    #          "access_token" => token
-    #        }) do
-    #   {:ok, wechat.json_module.decode!(ret)}
-    # end
     with {:ok, body} <- Jason.encode(payload),
          {:ok, resp} <-
            Http.do_request(
@@ -281,12 +266,6 @@ defmodule LibWechat do
   """
   @spec subscribe_send(t(), token_t(), Typespecs.string_dict()) :: ok_t(Typespecs.string_dict()) | err_t()
   def subscribe_send(%__MODULE__{client: client}, token, payload) do
-    # with {:ok, ret} <-
-    #        Client.do_request(wechat.client, :post, "/cgi-bin/message/subscribe/send", body, %{
-    #          "access_token" => token
-    #        }) do
-    #   {:ok, wechat.json_module.decode!(ret)}
-    # end
     with {:ok, body} <- Jason.encode(payload),
          {:ok, resp} <-
            Http.do_request(
@@ -344,18 +323,6 @@ defmodule LibWechat do
   """
   @spec uniform_send(t(), token_t(), Typespecs.string_dict()) :: ok_t(Typespecs.string_dict()) | err_t()
   def uniform_send(wechat, token, body) do
-    # with {:ok, ret} <-
-    #        Client.do_request(
-    #          wechat.client,
-    #          :post,
-    #          "/cgi-bin/message/wxopen/template/uniform_send",
-    #          body,
-    #          %{
-    #            "access_token" => token
-    #          }
-    #        ) do
-    #   {:ok, wechat.json_module.decode!(ret)}
-    # end
     with {:ok, body} <- Jason.encode(body),
          {:ok, resp} <-
            Http.do_request(
@@ -396,18 +363,6 @@ defmodule LibWechat do
   @spec get_phone_number(t(), token_t(), String.t()) ::
           ok_t(Typespecs.string_dict()) | err_t()
   def get_phone_number(wechat, token, code) do
-    # with {:ok, ret} <-
-    #        Client.do_request(
-    #          wechat.client,
-    #          :post,
-    #          "/wxa/business/getuserphonenumber",
-    #          %{"code" => code},
-    #          %{
-    #            "access_token" => token
-    #          }
-    #        ) do
-    #   {:ok, wechat.json_module.decode!(ret)}
-    # end
     with {:ok, resp} <-
            Http.do_request(
              wechat.client,
