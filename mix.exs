@@ -33,7 +33,7 @@ defmodule LibWechat.MixProject do
     [
       {:nimble_options, "~> 1.1"},
       {:jason, "~> 1.4"},
-      {:finch, "~> 0.16"},
+      {:finch, "~> 0.18"},
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:styler, "~> 0.11", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
