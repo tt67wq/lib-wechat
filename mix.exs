@@ -3,7 +3,7 @@ defmodule LibWechat.MixProject do
   use Mix.Project
 
   @name "lib_wechat"
-  @version "0.2.1"
+  @version "0.2.2"
   @repo_url "https://github.com/tt67wq/lib-wechat"
   @description "A library for WeChat API"
 
@@ -34,7 +34,7 @@ defmodule LibWechat.MixProject do
       {:nimble_options, "~> 1.1"},
       {:jason, "~> 1.4"},
       {:finch, "~> 0.18"},
-      {:ex_doc, "~> 0.31", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.32", only: :dev, runtime: false},
       {:styler, "~> 0.11", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
