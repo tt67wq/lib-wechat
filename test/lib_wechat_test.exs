@@ -2,23 +2,30 @@ defmodule LibWechatTest do
   @moduledoc false
   use ExUnit.Case
 
+  alias LibWechat.Debug
+  alias LibWechat.Test.App
+
   setup do
-    test_data = "tmp/test.json" |> File.read!() |> Jason.decode!()
+    cfg = [
+      appid: System.get_env("TEST_APP_ID"),
+      secret: System.get_env("TEST_APP_SECRET")
+    ]
 
-    wechat =
-      LibWechat.new(
-        appid: test_data["appid"],
-        secret: test_data["secret"]
-      )
+    Application.put_env(:app, LibWechat.Test.App, cfg)
 
-    start_supervised!({LibWechat, wechat: wechat})
+    start_supervised!(LibWechat.Test.App)
 
-    {:ok, %{"access_token" => token}} = LibWechat.get_access_token(wechat)
-
-    {:ok, %{wechat: wechat, token: token}}
+    :ok
   end
 
-  test "get_unlimited_wxacode", %{wechat: wechat, token: token} do
+  test "get_access_token" do
+    assert {:ok, res} = App.get_access_token()
+    Debug.debug(res)
+  end
+
+  test "get_unlimited_wxacode" do
+    {:ok, %{"access_token" => token}} = App.get_access_token()
+
     payload = %{
       "scene" => "foo=bar",
       "page" => "pages/hope/index",
@@ -28,30 +35,45 @@ defmodule LibWechatTest do
       "is_hyaline" => false
     }
 
-    assert {:ok, _} = LibWechat.get_unlimited_wxacode(wechat, token, payload)
+    assert {:ok, res} = App.get_unlimited_wxacode(token, payload)
+    Debug.debug(res)
   end
 
-  test "get_urllink", %{wechat: wechat, token: token} do
+  test "get_urllink" do
+    {:ok, %{"access_token" => token}} = App.get_access_token()
+
     payload = %{
       "path" => "pages/hope/index",
-      "query" => "foo=bar"
+      "query" => "foo=bar",
+      "is_expire" => false,
+      "expire_type" => 0,
+      "expire_time" => 0
     }
 
-    assert {:ok, _} = LibWechat.get_urllink(wechat, token, payload)
+    assert {:ok, res} = App.get_urllink(token, payload)
+    Debug.debug(res)
   end
 
-  test "generate_scheme", %{wechat: wechat, token: token} do
+  test "generate_scheme" do
+    {:ok, %{"access_token" => token}} = App.get_access_token()
+
     payload = %{
       "jump_wxa" => %{
         "path" => "pages/hope/index",
         "query" => "foo=bar"
-      }
+      },
+      "is_expire" => false,
+      "expire_type" => 0,
+      "expire_time" => 0
     }
 
-    assert {:ok, _} = LibWechat.generate_scheme(wechat, token, payload)
+    assert {:ok, res} = App.generate_scheme(token, payload)
+    Debug.debug(res)
   end
 
-  test "subscribe_send", %{wechat: wechat, token: token} do
+  test "subscribe_send" do
+    {:ok, %{"access_token" => token}} = App.get_access_token()
+
     payload = %{
       "touser" => "ohNY75Jw8MlsKuu4cFBbjmK4ZP_w",
       "template_id" => "c7R2mJAK3gzd1t7sm01DEiaOoSuIoATXt9h0syeZ300",
@@ -64,10 +86,13 @@ defmodule LibWechatTest do
       }
     }
 
-    assert {:ok, _} = LibWechat.subscribe_send(wechat, token, payload)
+    assert {:ok, res} = App.subscribe_send(token, payload)
+    Debug.debug(res)
   end
 
-  test "uniform_send", %{wechat: wechat, token: token} do
+  test "uniform_send" do
+    {:ok, %{"access_token" => token}} = App.get_access_token()
+
     payload = %{
       "touser" => "ohNY75Jw8MlsKuu4cFBbjmK4ZP_w",
       "mp_template_msg" => %{
@@ -98,16 +123,22 @@ defmodule LibWechatTest do
       }
     }
 
-    assert {:ok, _} = LibWechat.uniform_send(wechat, token, payload)
+    assert {:ok, res} = App.uniform_send(token, payload)
+    Debug.debug(res)
   end
 
-  test "msg_sec_check", %{wechat: wechat, token: token} do
-    assert {:ok, _} =
-             LibWechat.msg_sec_check(wechat, token, %{
+  @tag exec: true
+  test "msg_sec_check" do
+    {:ok, %{"access_token" => token}} = App.get_access_token()
+
+    assert {:ok, res} =
+             App.msg_sec_check(token, %{
                "content" => "hello",
                "openid" => "ohNY75Jw8MlsKuu4cFBbjmK4ZP_w",
                "version" => 2,
                "scene" => 1
              })
+
+    Debug.debug(res)
   end
 end

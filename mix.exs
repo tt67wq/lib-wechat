@@ -11,8 +11,9 @@ defmodule LibWechat.MixProject do
     [
       app: :lib_wechat,
       version: @version,
-      elixir: "~> 1.14",
+      elixir: "~> 1.16",
       start_permanent: Mix.env() == :prod,
+      elixirc_paths: elixirc_paths(Mix.env()),
       deps: deps(),
       source_url: @repo_url,
       name: @name,
@@ -49,4 +50,7 @@ defmodule LibWechat.MixProject do
       }
     ]
   end
+
+  defp elixirc_paths(env) when env in ~w(test)a, do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 end

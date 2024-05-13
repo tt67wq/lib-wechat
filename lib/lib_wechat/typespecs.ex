@@ -14,5 +14,5 @@ defmodule LibWechat.Typespecs do
           | :ignore
           | {:error, {:already_started, pid()} | term()}
 
-  @type string_dict :: %{String.t() => any()}
+  @type dict :: %{String.t() => any()}
 end
