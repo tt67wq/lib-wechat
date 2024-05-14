@@ -12,44 +12,47 @@ Add the dependency to your `mix.exs` file:
 ```elixir
 def deps do
   [
-    {:lib_wechat, "~> 0.2"}
+    {:lib_wechat, "~> 0.3"}
   ]
 end
 ```
 
 ## Usage
 
-1. Create a new instance of `LibWechat` with your appid and secret.
+1. Create a new instance using `LibWechat`.
 
 ```elixir
-wechat =
-  LibWechat.new(
-    appid: "Your APP ID",
-    secret: "Your APP SECRET"
-  )
+defmodule MyApp do
+  use LibWechat, otp_app: :my_app
+end
 ```
 
-2. Add LibWechat to your supervision tree.
+2. Configure your app.
 
 ```elixir
+config :my_app, MyApp
+  appid: "your appid",
+  secret: "your secret" 
+```
+3. Add your app to supervisor tree.
+```Elixir
 children = [
-  {LibWechat, wechat: wechat}
+  MyApp
 ]
 
 Supervisor.init(children, strategy: :one_for_one)
 ```
-
-3. Call the API you want to use.
+4. Start your journey!
 
 ```elixir
 # Get access token
-LibWechat.get_access_token(wechat)
+MyApp.get_access_token()
 
 # Get miniapp session with code
-LibWechat.jscode_to_session(wechat, "jscode")
+MyApp.jscode_to_session("jscode")
 
 # Get unlimited miniapp wxacode
-LibWechat.get_unlimited_wxacode(wechat, token,
+MyApp.get_unlimited_wxacode(token,
     %{"scene" => "foo=bar",
       "page" => "pages/index/index",
       "width" => 430,
@@ -61,6 +64,17 @@ LibWechat.get_unlimited_wxacode(wechat, token,
 #.... see more api in lib_wechat.ex
 ```
 
+## Supportted APIs
+
+- [x] get_access_token
+- [x] jscode_to_session
+- [x] get_unlimited_wxacode
+- [x] get_urllink
+- [x] generate_scheme
+- [x] subscribe_send
+- [x] uniform_send
+- [x] get_phone_number
+- [x] msg_sec_check
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details
