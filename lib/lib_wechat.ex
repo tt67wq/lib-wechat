@@ -1,12 +1,49 @@
 defmodule LibWechat do
-  @moduledoc "README.md"
-             |> File.read!()
-             |> String.split("<!-- MDOC !-->")
-             |> Enum.fetch!(1)
+  @moduledoc """
+  LibWechat - 微信 API Elixir 库
 
-  # alias LibWechat.Http
-  # alias LibWechat.Typespecs
+  这是一个用于与微信 API 交互的 Elixir 库，提供了小程序、公众号等微信平台的功能接口。
 
+  ## 使用方法
+
+  在你的模块中 `use LibWechat` 来获得所有微信 API 功能：
+
+      defmodule MyApp.Wechat do
+        use LibWechat, otp_app: :my_app
+      end
+
+  然后在配置文件中设置微信应用信息：
+
+      config :my_app, MyApp.Wechat,
+        appid: "your_app_id",
+        secret: "your_app_secret"
+
+  ## 可用功能
+
+  - 认证管理：获取 access_token、小程序登录
+  - 小程序码：生成不限量小程序码
+  - 链接生成：URL Link、Scheme 码
+  - 消息推送：订阅消息发送
+  - 用户信息：获取手机号
+  - 安全检查：文本内容安全检测
+
+  ## 启动
+
+      {:ok, _pid} = MyApp.Wechat.start_link()
+
+  ## 示例
+
+      # 获取 access_token
+      {:ok, token_info} = MyApp.Wechat.get_access_token()
+
+      # 小程序登录
+      {:ok, session} = MyApp.Wechat.jscode_to_session("user_code")
+
+      # 生成小程序码
+      {:ok, qrcode} = MyApp.Wechat.get_unlimited_wxacode(token, payload)
+
+  更多详细使用说明请参考 [README.md](README.md) 文件。
+  """
   @external_resource "README.md"
 
   defmacro __using__(opts) do
