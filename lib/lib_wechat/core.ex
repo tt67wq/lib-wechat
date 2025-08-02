@@ -10,23 +10,17 @@ defmodule LibWechat.Core do
   @type ok_t(m) :: {:ok, m}
   @type err_t :: {:error, LibWechat.Error.t()}
 
-  @http_impl LibWechat.Http.Finch
-
-  def start_link({name, http_name, config}) do
+  def start_link({name, finch, config}) do
     config =
       config
       |> Config.validate!()
-      |> Keyword.put(:http_name, http_name)
+      |> Keyword.put(:finch, finch)
 
     Agent.start_link(fn -> config end, name: name)
   end
 
   def get(name) do
     Agent.get(name, & &1)
-  end
-
-  defp call_http(name, req) do
-    apply(@http_impl, :do_request, [name, req])
   end
 
   @spec do_request(Config.t(), Typespecs.method(), binary(), Typespecs.params(), Typespecs.body(), Keyword.t()) ::
@@ -37,7 +31,7 @@ defmodule LibWechat.Core do
       {"Accept", "application/json"}
     ]
 
-    call_http(config[:http_name], %Http.Request{
+    LibWechat.Http.do_request(config[:finch], %Http.Request{
       host: config[:service_host],
       method: method,
       path: api,
