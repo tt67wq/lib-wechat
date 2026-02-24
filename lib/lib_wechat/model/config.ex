@@ -7,6 +7,11 @@ defmodule LibWechat.Model.Config do
       default: "api.weixin.qq.com",
       doc: "服务地址"
     ],
+    debug: [
+      type: :boolean,
+      default: false,
+      doc: "调试模式，开启后会打印HTTP请求日志"
+    ],
     appid: [
       type: :string,
       required: true,

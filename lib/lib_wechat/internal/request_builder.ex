@@ -8,6 +8,8 @@ defmodule LibWechat.Internal.RequestBuilder do
   alias LibWechat.Model.Http
   alias LibWechat.Typespecs
 
+  require Logger
+
   @doc """
   执行 HTTP 请求。
 
@@ -31,7 +33,7 @@ defmodule LibWechat.Internal.RequestBuilder do
       {"Accept", "application/json"}
     ]
 
-    LibWechat.Http.do_request(config[:finch], %Http.Request{
+    request = %Http.Request{
       host: config[:service_host],
       method: method,
       path: api,
@@ -39,7 +41,80 @@ defmodule LibWechat.Internal.RequestBuilder do
       body: body,
       params: params,
       opts: opts
-    })
+    }
+
+    if config[:debug] do
+      log_request(request)
+    end
+
+    result = LibWechat.Http.do_request(config[:finch], request)
+
+    if config[:debug] do
+      log_response(result)
+    end
+
+    result
+  end
+
+  # 辅助函数：记录请求日志
+  defp log_request(request) do
+    Logger.debug("""
+    [LibWechat] Request:
+    	Method: #{request.method}
+    	URL: #{build_url(request)}
+    	Headers: #{inspect(request.headers)}
+    	Body: #{truncate_body(request.body)}
+    """)
+  end
+
+  # 辅助函数：记录响应日志
+  defp log_response({:ok, response}) do
+    Logger.debug("""
+    [LibWechat] Response:
+    	Status: #{response.status}
+    	Headers: #{inspect(response.headers)}
+    	Body: #{truncate_body(response.body)}
+    """)
+  end
+
+  defp log_response({:error, reason}) do
+    Logger.debug("""
+    [LibWechat] Response Error:
+    	Reason: #{inspect(reason)}
+    """)
+  end
+
+  # 辅助函数：截断请求体
+  defp truncate_body(""), do: "(empty)"
+  defp truncate_body(nil), do: "(nil)"
+
+  defp truncate_body(body) when is_binary(body) do
+    if String.length(body) > 500 do
+      String.slice(body, 0, 500) <> "... [truncated]"
+    else
+      body
+    end
+  end
+
+  defp truncate_body(other), do: inspect(other)
+
+  # 辅助函数：构建完整 URL（用于日志）
+  defp build_url(request) do
+    query_string = URI.encode_query(request.params)
+    url = "#{request.host}#{request.path}"
+
+    if query_string != "" do
+      url <> "?" <> sanitize(query_string)
+    else
+      url
+    end
+  end
+
+  # 辅助函数：脱敏敏感信息
+  defp sanitize(text) when is_binary(text) do
+    text
+    |> String.replace("access_token=[^&]*", "access_token=***")
+    |> String.replace("secret=[^&]*", "secret=***")
   end
 
   @doc """
