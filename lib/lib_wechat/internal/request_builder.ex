@@ -71,7 +71,7 @@ defmodule LibWechat.Internal.RequestBuilder do
   defp log_response({:ok, response}) do
     Logger.debug("""
     [LibWechat] Response:
-    	Status: #{response.status}
+    	Status: #{response.status_code}
     	Headers: #{inspect(response.headers)}
     	Body: #{truncate_body(response.body)}
     """)
@@ -101,7 +101,7 @@ defmodule LibWechat.Internal.RequestBuilder do
   # 辅助函数：构建完整 URL（用于日志）
   defp build_url(request) do
     query_string = URI.encode_query(request.params)
-    url = "#{request.host}#{request.path}"
+    url = "https://#{request.host}#{request.path}"
 
     if query_string != "" do
       url <> "?" <> sanitize(query_string)
@@ -113,8 +113,9 @@ defmodule LibWechat.Internal.RequestBuilder do
   # 辅助函数：脱敏敏感信息
   defp sanitize(text) when is_binary(text) do
     text
-    |> String.replace("access_token=[^&]*", "access_token=***")
-    |> String.replace("secret=[^&]*", "secret=***")
+    |> String.replace(~r"access_token=[^&]*", "access_token=***")
+    |> String.replace(~r"secret=[^&]*", "secret=***")
+    |> String.replace(~r"js_code=[^&]*", "js_code=***")
   end
 
   @doc """
