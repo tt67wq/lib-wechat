@@ -221,6 +221,13 @@ end
 | `appid` | `string` | 是 | - | 微信应用 ID |
 | `secret` | `string` | 是 | - | 微信应用密钥 |
 | `service_host` | `string` | 否 | `"api.weixin.qq.com"` | 微信 API 服务器地址 |
+| `debug` | `boolean` | 否 | `false` | 开启调试模式，打印 HTTP 请求日志 |
+
+| 选项 | 类型 | 必需 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `appid` | `string` | 是 | - | 微信应用 ID |
+| `secret` | `string` | 是 | - | 微信应用密钥 |
+| `service_host` | `string` | 否 | `"api.weixin.qq.com"` | 微信 API 服务器地址 |
 
 ## 错误处理
 

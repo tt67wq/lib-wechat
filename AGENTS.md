@@ -297,5 +297,24 @@ Users configure via their app's config:
 config :my_app, MyApp.Wechat,
   appid: "your_app_id",
   secret: "your_app_secret",
+  service_host: "api.weixin.qq.com",  # optional
+  debug: false  # optional, enables HTTP request logging
+```
+
+#### Configuration Options
+
+| Option | Type | Required | Default | Description |
+|--------|------|----------|---------|-------------|
+| `appid` | `string` | Yes | - | WeChat app ID |
+| `secret` | `string` | Yes | - | WeChat app secret |
+| `service_host` | `string` | No | `"api.weixin.qq.com"` | WeChat API server host |
+| `debug` | `boolean` | No | `false` | Enable debug mode - logs HTTP requests and responses |
+
+Users configure via their app's config:
+
+```elixir
+config :my_app, MyApp.Wechat,
+  appid: "your_app_id",
+  secret: "your_app_secret",
   service_host: "api.weixin.qq.com"  # optional
 ```
