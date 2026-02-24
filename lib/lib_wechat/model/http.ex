@@ -22,7 +22,7 @@ defmodule LibWechat.Model.Http do
 
     defstruct scheme: "https", host: "", port: 443, method: :get, path: "", headers: [], body: nil, params: %{}, opts: []
 
-    @spec url(t()) :: URI.t()
+    @spec url(t()) :: %URI{}
     def url(%__MODULE__{scheme: scheme, host: host, port: port, path: path, params: params}) do
       query =
         if params in [nil, %{}] do

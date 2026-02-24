@@ -54,7 +54,7 @@ defimpl LibWechat.Http, for: LibWechat.Http.Finch do
     finch_req =
       Finch.build(
         req.method,
-        Http.Request.url(req),
+        URI.to_string(Http.Request.url(req)),
         req.headers,
         req.body,
         opts
