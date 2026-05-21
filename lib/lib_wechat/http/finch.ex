@@ -49,19 +49,18 @@ defimpl LibWechat.Http, for: LibWechat.Http.Finch do
   @spec do_request(LibWechat.Http.Finch.t(), Http.Request.t()) ::
           {:ok, Http.Response.t()} | {:error, LibWechat.Error.t()}
   def do_request(%LibWechat.Http.Finch{finch_name: finch_name}, req) do
-    opts = opts(req.opts)
+    request_opts = opts(req.opts)
 
     finch_req =
       Finch.build(
         req.method,
         to_string(Http.Request.url(req)),
         req.headers,
-        req.body,
-        opts
+        req.body
       )
 
     finch_req
-    |> Finch.request(finch_name)
+    |> Finch.request(finch_name, request_opts)
     |> case do
       {:ok, %Finch.Response{status: status, body: body, headers: headers}}
       when status in 200..299 ->
